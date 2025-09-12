@@ -1,14 +1,16 @@
 package main
 
 import (
-    "github.com/gin-gonic/gin"
+	"net/http"
+
+	generated "github.com/bromivipo/marketplace/api/definitions"
 	"github.com/bromivipo/marketplace/api/handlers"
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-    router := gin.Default()
-    router.GET("/products/v1", handlers.GetProductsV1)
-	router.GET("/product-by-id/v1", handlers.GetProductByIDV1)
-
-    router.Run("localhost:8080")
+    router := chi.NewRouter()
+    handler := generated.NewStrictHandler(handlers.NewServer(), nil)
+    generated.HandlerFromMux(handler, router)
+    http.ListenAndServe("localhost:8080", router)
 }

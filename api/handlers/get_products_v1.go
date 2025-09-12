@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"net/http"
+	"context"
 
-	"github.com/bromivipo/marketplace/api/definitions"
+	generated "github.com/bromivipo/marketplace/api/definitions"
 	"github.com/bromivipo/marketplace/api/pgrepo"
-	"github.com/gin-gonic/gin"
 )
 
-func GetProductsV1(c *gin.Context) {
-	products := definitions.GetProductsV1Response{Products: pgrepo.GetProducts()}
-    c.IndentedJSON(http.StatusOK, products)
+func (Server) GetProductsV1(ctx context.Context, request generated.GetProductsV1RequestObject) (generated.GetProductsV1ResponseObject, error) {
+	return generated.GetProductsV1200JSONResponse{Products: pgrepo.GetProducts()}, nil
 }
