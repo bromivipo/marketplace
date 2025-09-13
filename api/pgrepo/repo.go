@@ -6,6 +6,8 @@ import (
 	"github.com/bromivipo/marketplace/api/definitions"
 	sqlqueries "github.com/bromivipo/marketplace/api/pgrepo/sql_queries"
 	"github.com/jackc/pgx"
+	"github.com/shopspring/decimal"
+	// "github.com/shopspring/decimal"
 )
 
 
@@ -71,4 +73,50 @@ func GetUserPassword(username string) (*string) {
 		return nil
 	}
 	return &password
+}
+
+type ErrorReason int
+
+const (
+	OutOfStock ErrorReason = iota
+	NotFound
+)
+
+type UpdateError struct {
+	Id int
+	Reason ErrorReason
+}
+
+func UpdateProducts(ids []int) *UpdateError {
+	conn := GetConnection()
+	trx, err := conn.Begin()
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+	}
+	for _, id := range ids {
+		row := trx.QueryRow(sqlqueries.UPDATE_PRODUCT, id)
+		var left_in_stock int
+		if err := row.Scan(&left_in_stock); err != nil {
+			log.Printf("ERROR: %v", err)
+			trx.Rollback()
+			return &UpdateError{Id: id, Reason: NotFound}
+		}
+		if left_in_stock < 0 {
+			trx.Rollback()
+			return &UpdateError{Id: id, Reason: OutOfStock}
+		}
+	}
+	trx.Commit()
+	return nil
+}
+
+func InsertOrder(ids []int, username string) error {
+	conn := GetConnection()
+	var total_amount decimal.Decimal
+	err := conn.QueryRow(sqlqueries.SELECT_TOTAL_AMOUNT, ids).Scan(&total_amount)
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+	}
+	_, err = conn.Exec(sqlqueries.INSERT_NEW_ORDER, username, ids, total_amount)
+	return err
 }

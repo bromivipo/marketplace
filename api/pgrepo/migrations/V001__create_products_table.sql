@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS products (
-    id BIGSERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255),
     price DECIMAL,
     left_in_stock INT,
