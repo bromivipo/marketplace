@@ -36,6 +36,16 @@ type UserInfo struct {
 	Username string `json:"username"`
 }
 
+// PostMakeOrderV1JSONBody defines parameters for PostMakeOrderV1.
+type PostMakeOrderV1JSONBody struct {
+	ProductIds []int `json:"product_ids"`
+}
+
+// PostMakeOrderV1Params defines parameters for PostMakeOrderV1.
+type PostMakeOrderV1Params struct {
+	Authorization string `json:"Authorization"`
+}
+
 // GetProductByIdV1Params defines parameters for GetProductByIdV1.
 type GetProductByIdV1Params struct {
 	Id int `form:"id" json:"id"`
@@ -43,6 +53,9 @@ type GetProductByIdV1Params struct {
 
 // PostLoginV1JSONRequestBody defines body for PostLoginV1 for application/json ContentType.
 type PostLoginV1JSONRequestBody = UserInfo
+
+// PostMakeOrderV1JSONRequestBody defines body for PostMakeOrderV1 for application/json ContentType.
+type PostMakeOrderV1JSONRequestBody PostMakeOrderV1JSONBody
 
 // PostRegisterV1JSONRequestBody defines body for PostRegisterV1 for application/json ContentType.
 type PostRegisterV1JSONRequestBody = UserInfo
@@ -52,6 +65,9 @@ type ServerInterface interface {
 
 	// (POST /login/v1)
 	PostLoginV1(w http.ResponseWriter, r *http.Request)
+
+	// (POST /make-order/v1)
+	PostMakeOrderV1(w http.ResponseWriter, r *http.Request, params PostMakeOrderV1Params)
 
 	// (GET /product-by-id/v1)
 	GetProductByIdV1(w http.ResponseWriter, r *http.Request, params GetProductByIdV1Params)
@@ -69,6 +85,11 @@ type Unimplemented struct{}
 
 // (POST /login/v1)
 func (_ Unimplemented) PostLoginV1(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// (POST /make-order/v1)
+func (_ Unimplemented) PostMakeOrderV1(w http.ResponseWriter, r *http.Request, params PostMakeOrderV1Params) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -102,6 +123,51 @@ func (siw *ServerInterfaceWrapper) PostLoginV1(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.PostLoginV1(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// PostMakeOrderV1 operation middleware
+func (siw *ServerInterfaceWrapper) PostMakeOrderV1(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostMakeOrderV1Params
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Authorization" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Authorization")]; found {
+		var Authorization string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Authorization", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Authorization", valueList[0], &Authorization, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Authorization", Err: err})
+			return
+		}
+
+		params.Authorization = Authorization
+
+	} else {
+		err := fmt.Errorf("Header parameter Authorization is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Authorization", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostMakeOrderV1(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -293,6 +359,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/login/v1", wrapper.PostLoginV1)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/make-order/v1", wrapper.PostMakeOrderV1)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/product-by-id/v1", wrapper.GetProductByIdV1)
 	})
 	r.Group(func(r chi.Router) {
@@ -339,6 +408,41 @@ type PostLoginV1404JSONResponse ErrorResponse
 func (response PostLoginV1404JSONResponse) VisitPostLoginV1Response(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMakeOrderV1RequestObject struct {
+	Params PostMakeOrderV1Params
+	Body   *PostMakeOrderV1JSONRequestBody
+}
+
+type PostMakeOrderV1ResponseObject interface {
+	VisitPostMakeOrderV1Response(w http.ResponseWriter) error
+}
+
+type PostMakeOrderV1200Response struct {
+}
+
+func (response PostMakeOrderV1200Response) VisitPostMakeOrderV1Response(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type PostMakeOrderV1404JSONResponse ErrorResponse
+
+func (response PostMakeOrderV1404JSONResponse) VisitPostMakeOrderV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMakeOrderV1409JSONResponse ErrorResponse
+
+func (response PostMakeOrderV1409JSONResponse) VisitPostMakeOrderV1Response(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -429,6 +533,9 @@ type StrictServerInterface interface {
 	// (POST /login/v1)
 	PostLoginV1(ctx context.Context, request PostLoginV1RequestObject) (PostLoginV1ResponseObject, error)
 
+	// (POST /make-order/v1)
+	PostMakeOrderV1(ctx context.Context, request PostMakeOrderV1RequestObject) (PostMakeOrderV1ResponseObject, error)
+
 	// (GET /product-by-id/v1)
 	GetProductByIdV1(ctx context.Context, request GetProductByIdV1RequestObject) (GetProductByIdV1ResponseObject, error)
 
@@ -492,6 +599,39 @@ func (sh *strictHandler) PostLoginV1(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PostLoginV1ResponseObject); ok {
 		if err := validResponse.VisitPostLoginV1Response(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostMakeOrderV1 operation middleware
+func (sh *strictHandler) PostMakeOrderV1(w http.ResponseWriter, r *http.Request, params PostMakeOrderV1Params) {
+	var request PostMakeOrderV1RequestObject
+
+	request.Params = params
+
+	var body PostMakeOrderV1JSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostMakeOrderV1(ctx, request.(PostMakeOrderV1RequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostMakeOrderV1")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostMakeOrderV1ResponseObject); ok {
+		if err := validResponse.VisitPostMakeOrderV1Response(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

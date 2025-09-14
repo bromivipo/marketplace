@@ -103,6 +103,46 @@ paths:
               application/json:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
+  
+  /make-order/v1:
+    post:
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            example: Bearer <token>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+               - product_ids
+              properties:
+                product_ids:
+                  type: array
+                  items:
+                    type: integer
+                  minItems: 1
+      responses:
+        '200':
+            description: OK
+        '404':
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '409':
+            description: Conflict
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     ProductItem:
