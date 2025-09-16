@@ -7,7 +7,6 @@ import (
 	sqlqueries "github.com/bromivipo/marketplace/api/pgrepo/sql_queries"
 	"github.com/jackc/pgx"
 	"github.com/shopspring/decimal"
-	// "github.com/shopspring/decimal"
 )
 
 
@@ -31,7 +30,6 @@ func GetProductById(id int) (*generated.ProductItem) {
 		return nil
 	}
 	return &product
-
 }
 
 func GetProducts() ([]generated.ProductItem) {
@@ -53,7 +51,6 @@ func GetProducts() ([]generated.ProductItem) {
 		resp = append(resp, product)
 	}
 	return resp
-
 }
 
 
@@ -119,4 +116,32 @@ func InsertOrder(ids []int, username string) error {
 	}
 	_, err = conn.Exec(sqlqueries.INSERT_NEW_ORDER, username, ids, total_amount)
 	return err
+}
+
+func InsertNewProduct(product *generated.ProductToRegister) (id int32, err error) {
+	conn := GetConnection()
+	price, _ := decimal.NewFromString(product.Price)
+	err = conn.QueryRow(sqlqueries.INSERT_NEW_PRODUCT, product.Name, price, product.LeftInStock, product.ProviderId, product.Category).Scan(&id)
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+	}
+	return id, err
+}
+
+func UpdateProductsAmount(toAdd *generated.AddProductsRequest) *UpdateError {
+	conn := GetConnection()
+	trx, err := conn.Begin()
+	if err != nil {
+		log.Printf("ERROR: %v", err)
+	}
+	for _, product := range toAdd.Products {
+		_, err := trx.Exec(sqlqueries.UPDATE_PRODUCT_AMOUNT, product.Id, product.Amount)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			trx.Rollback()
+			return &UpdateError{Id: int(product.Id), Reason: NotFound}
+		}
+	}
+	trx.Commit()
+	return nil
 }
