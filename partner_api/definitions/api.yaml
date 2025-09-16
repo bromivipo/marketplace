@@ -1,0 +1,153 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title:  API server
+paths:
+  /register-partner/v1:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                partner_name:
+                  type: string
+              required:
+                - partner_name
+      responses:
+        '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    permanent_token:
+                      type: string
+                  required:
+                    - permanent_token
+        '409':
+            description: Conflict
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+  
+  /add-products-in-stock/v1:
+    post:
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            example: Bearer <token>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - products
+              properties:
+                products:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                    - product_id
+                    - number_to_add
+                    properties:
+                      product_id:
+                        type: integer
+                      number_to_add:
+                        type: integer
+      responses:
+        '200':
+            description: OK
+        '401':
+            description: Not Authorized
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '404':
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+  
+  /register-new-product/v1:
+    post:
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            example: Bearer <token>
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductItem'
+      responses:
+        '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    product_id:
+                      type: integer
+                  required:
+                    - product_id
+        '401':
+            description: Not Authorized
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '404':
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    ProductItem:
+      type: object
+      required:
+        - name
+        - price
+        - left_in_stock
+        - category
+      properties:
+        name:
+          type: string
+        price:
+          type: string
+        left_in_stock:
+          type: integer
+        category:
+          type: string
