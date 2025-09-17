@@ -8,13 +8,15 @@ import (
 	generated "github.com/bromivipo/marketplace/api/definitions"
 	grpchandlers "github.com/bromivipo/marketplace/api/handlers/grpc"
 	"github.com/bromivipo/marketplace/api/handlers/http"
+	"github.com/bromivipo/marketplace/api/pgrepo"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc"
 )
 
 func main() {
+	log.Println("Marketplace Service started")
 	go func() {
-		lis, err := net.Listen("tcp", "localhost:50051")
+		lis, err := net.Listen("tcp", pgrepo.GetEnvOrDefault("API_GRPC_ADDRESS", "localhost:50051"))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -30,11 +32,11 @@ func main() {
 		router := chi.NewRouter()
 		handler := generated.NewStrictHandler(httphandlers.NewServer(), nil)
 		generated.HandlerFromMux(handler, router)
-		log.Println("http server started on port 8080")
-		if err := http.ListenAndServe("localhost:8080", router); err != nil {
+		log.Println("http server started")
+		if err := http.ListenAndServe(pgrepo.GetEnvOrDefault("API_HTTP_ADDRESS", "localhost:8080"), router); err != nil {
 			log.Fatalf("failed to serve http: %v", err)
 		}
-	} ()
-	
+	}()
+
 	select {}
 }

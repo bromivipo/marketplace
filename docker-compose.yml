@@ -1,0 +1,49 @@
+services:
+  api:
+    build: .\api
+    container_name: api
+    ports:
+      - "8000:8000"
+    environment:
+      API_HTTP_ADDRESS: 0.0.0.0:8000
+      API_GRPC_ADDRESS: 0.0.0.0:50052
+      DB_HOST: db_marketplace
+      DB_PORT: 5432
+      DB_USER: misha
+      DB_PASSWORD: 1111
+      DB_NAME: marketplace
+  partner_api:
+    build: .\partner_api
+    container_name: partner_api
+    ports:
+      - "8001:8001"
+    environment:
+      PARTNER_API_HTTP_ADDRESS: 0.0.0.0:8001
+      API_GRPC_ADDRESS: api:50052
+      DB_HOST: db_partners
+      DB_PORT: 5432
+      DB_USER: misha
+      DB_PASSWORD: 1111
+      DB_NAME: partners
+
+  db_marketplace:
+    image: postgres:latest
+    container_name: db_marketplace
+    restart: always
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: misha
+      POSTGRES_PASSWORD: 1111
+      POSTGRES_DB: marketplace
+
+  db_partners:
+    image: postgres:latest
+    container_name: db_partners
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: misha
+      POSTGRES_PASSWORD: 1111
+      POSTGRES_DB: partners
