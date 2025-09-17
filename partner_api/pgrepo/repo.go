@@ -2,15 +2,26 @@ package pgrepo
 
 import (
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/bromivipo/marketplace/partner_api/pgrepo/sqlqueries"
 	"github.com/jackc/pgx"
 )
 
+func GetEnvOrDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
 
 func GetConnection() *pgx.Conn {
-	config := pgx.ConnConfig{Host: "localhost", Port: 5432, Database: "partners", User: "misha", Password: "1111"}
+	port, _ := strconv.Atoi(GetEnvOrDefault("DB_PORT", "5432"))
+	config := pgx.ConnConfig{Host: GetEnvOrDefault("DB_HOST", "localhost"), Port: uint16(port), Database: GetEnvOrDefault("DB_NAME", "partners"), User: GetEnvOrDefault("DB_USER", "misha"), Password: GetEnvOrDefault("DB_PASSWORD", "1111")}
 	conn, err := pgx.Connect(config)
+	log.Println("CONFIG", config)
 	if err != nil {
 		log.Println("ERROR: Cannot establish connection")
 		panic(err)

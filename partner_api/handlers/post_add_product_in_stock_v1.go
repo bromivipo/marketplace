@@ -19,7 +19,7 @@ func (Server) PostAddProductsInStockV1(ctx context.Context, request generated.Po
 	if id == nil {
 		return generated.PostAddProductsInStockV1401JSONResponse{Code: consts.Unauthorized, Message: "Token is missing or unknown"}, nil
 	}
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(pgrepo.GetEnvOrDefault("API_GRPC_ADDRESS", "localhost:50051"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Printf("did not connect: %v", err)
 	}
