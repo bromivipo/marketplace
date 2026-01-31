@@ -44,7 +44,7 @@ The system is fully containerized, utilizing Docker's internal DNS for service d
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 * Docker and Docker Compose installed.
