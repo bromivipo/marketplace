@@ -5,6 +5,7 @@ info:
 paths:
   /products/v1:
     get:
+      description: Returns a list of existing products
       responses:
         '200':
           description: List of products
@@ -22,6 +23,7 @@ paths:
 
   /product-by-id/v1:
     get:
+      description: Returns information about one specific product
       parameters:
         - name: id
           in: query
@@ -54,6 +56,7 @@ paths:
                   $ref: '#/components/schemas/ErrorResponse'
   /login/v1:
     post:
+      description: Returns temporary jwt token
       requestBody:
         required: true
         content:
@@ -88,6 +91,7 @@ paths:
 
   /register/v1:
     post:
+      description: Registers new user
       requestBody:
         required: true
         content:
@@ -106,6 +110,7 @@ paths:
   
   /make-order/v1:
     post:
+      description: Processes customer order
       parameters:
         - name: Authorization
           in: header

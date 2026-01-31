@@ -12,6 +12,9 @@ services:
       DB_USER: misha
       DB_PASSWORD: 1111
       DB_NAME: marketplace
+    depends_on:
+      migrate_api:
+        condition: service_completed_successfully
   partner_api:
     build: .\partner_api
     container_name: partner_api
@@ -25,6 +28,11 @@ services:
       DB_USER: misha
       DB_PASSWORD: 1111
       DB_NAME: partners
+    depends_on:
+      migrate_partner:
+        condition: service_completed_successfully
+      api:
+        condition: service_started
 
   db_marketplace:
     image: postgres:latest
@@ -36,6 +44,11 @@ services:
       POSTGRES_USER: misha
       POSTGRES_PASSWORD: 1111
       POSTGRES_DB: marketplace
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U misha -d marketplace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   db_partners:
     image: postgres:latest
@@ -47,3 +60,26 @@ services:
       POSTGRES_USER: misha
       POSTGRES_PASSWORD: 1111
       POSTGRES_DB: partners
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U misha -d partners"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate_api:
+    image: flyway/flyway:latest
+    volumes:
+      - ./api/pgrepo/migrations:/flyway/sql
+    command: -url=jdbc:postgresql://db_marketplace:5432/marketplace -user=misha -password=1111 -connectRetries=60 migrate
+    depends_on:
+      db_marketplace:
+        condition: service_healthy
+
+  migrate_partner:
+    image: flyway/flyway:latest
+    volumes:
+      - ./partner_api/pgrepo/migrations:/flyway/sql
+    command: -url=jdbc:postgresql://db_partners:5432/partners -user=misha -password=1111 -connectRetries=60 migrate
+    depends_on:
+      db_partners:
+        condition: service_healthy

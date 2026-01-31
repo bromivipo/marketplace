@@ -5,6 +5,7 @@ info:
 paths:
   /register-partner/v1:
     post:
+      description: Registers new partner
       requestBody:
         required: true
         content:
@@ -37,6 +38,7 @@ paths:
   
   /add-products-in-stock/v1:
     post:
+      description: Updates inventory counts for specific products. 
       parameters:
         - name: Authorization
           in: header
@@ -84,6 +86,7 @@ paths:
   
   /register-new-product/v1:
     post:
+      description: Registers partner product
       parameters:
         - name: Authorization
           in: header
