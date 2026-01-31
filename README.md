@@ -11,9 +11,9 @@ The system is built with strict service boundaries:
 - **Isolated Persistence**: Each service owns its own PostgreSQL instance.
 
 ### Key Technical Features
-* **Schema-First Development**: API contracts defined using **OpenAPI 3.0** (REST) and **Protocol Buffers** (gRPC).
-* **Inter-Service Communication**: Partner API communicates with Core API via **gRPC** (HTTP/2) for low-latency.
-* **Automated Migrations**: Integrated **Flyway** migration engine.
+* **Schema-First Development**: API contracts defined using OpenAPI 3.0 (REST) and Protocol Buffers (gRPC).
+* **Inter-Service Communication**: Partner API communicates with Core API via gRPC for low-latency.
+* **Automated Migrations**: Integrated Flyway migration engine.
 * **Infrastructure as Code**: Full system orchestration via Docker Compose with healthchecks and dependency management.
 
 ---
