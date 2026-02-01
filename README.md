@@ -1,6 +1,6 @@
 # Marketplace Engine
 
-A high-performance, distributed marketplace backend built with Go. This project demonstrates a microservice architecture featuring isolated databases, automated schema migrations, and inter-service synchronization via gRPC.
+A distributed marketplace backend built with Go. This project demonstrates a microservice architecture featuring isolated databases, automated schema migrations, and inter-service synchronization via gRPC.
 
 ## Architectural Design
 
